@@ -15,3 +15,7 @@
 /gradle.properties
 /gradlew
 /gradlew.bat
+/app/schemas/
+/app/*.iml
+/app/build/
+/capture

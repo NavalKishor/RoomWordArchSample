@@ -10,12 +10,25 @@ android {
         versionCode rootProject.appCode
         versionName "$rootProject.appVer"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        // only for the room schema to keep track it and ride off warning
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    dataBinding.enabled = true //not need from 3.2 studio version
+//    android.enableExperimentalFeatureDatabinding = true
+//    android.databinding.enableV2=true
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -35,4 +48,17 @@ dependencies {
 // Lifecycle components
     implementation "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
     annotationProcessor "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
+    //not required if only lifecycle.activity
+    implementation "android.arch.lifecycle:runtime:$rootProject.archLifecycleVersion"
+
+    implementation "com.firebase:firebase-jobdispatcher:$rootProject.firebase_jobdispatcher_version"
+
+    implementation "com.android.support:recyclerview-v7:$rootProject.support"
+    implementation "com.android.support:preference-v7:$rootProject.support"
+    // Instrumentation dependencies use androidTestCompile"
+    // (as opposed to testCompile for local unit tests run in the JVM"
+    // androidTestImplementation "com.android.support:support-annotations:$rootProject.support"
+    //androidTestImplementation "com.android.support.test:rules:$rootProject.support_test_version"
 }
+
+

@@ -4,18 +4,24 @@ import android.arch.persistence.db.SupportSQLiteDatabase;
 import android.arch.persistence.room.Database;
 import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
+import android.arch.persistence.room.TypeConverters;
 import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-@Database(entities = {Word.class}, version = 1)
+@Database(entities = {Word.class,User.class,WeatherEntry.class}, version = 2/*, exportSchema = false*/)
+@TypeConverters(DateConverter.class)
 public abstract class WordRoomDatabase extends RoomDatabase
 {
+
     public abstract WordDao wordDao();
+    public abstract UserDao userDao();
+    public abstract WeatherDao weatherDao();
     private static volatile WordRoomDatabase INSTANCE;
-    static WordRoomDatabase getDatabase(final Context context) {
+    private static final String TAG="WordRoomDatabase";
+    public static WordRoomDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (WordRoomDatabase.class) {
                 if (INSTANCE == null) {
@@ -31,7 +37,7 @@ public abstract class WordRoomDatabase extends RoomDatabase
                             * this is how you specifically want to handle migrations.
                              * */
                             //.fallbackToDestructiveMigration()// empty migration or upgrade to db, delete and recreate just change version no above > previous version
-                            //.addMigrations(MIGRATION_1_2)
+                            .addMigrations(MIGRATION_1_2)
                             //.addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                             //.addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                             //.addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_1_4)
@@ -44,13 +50,21 @@ public abstract class WordRoomDatabase extends RoomDatabase
     }
     private static RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback(){
                 @Override
-                public void onOpen (@NonNull SupportSQLiteDatabase db){
+                public void onOpen (@NonNull  SupportSQLiteDatabase db){
                     super.onOpen(db);
                     // soon after the opening of database if you we can to perform some action we can use this call back
                     // every time it will be called.
                    // new PopulateDbAsync(INSTANCE).execute();
-                    Log.i(this.getClass().getSimpleName(),   "RoomDatabase.Callback-->onOpen: ");
+                    Log.i(TAG,   "RoomDatabase.Callback-->onOpen: ");
                 }
+
+                @Override
+                public void onCreate(@NonNull  SupportSQLiteDatabase db)
+                {
+                    super.onCreate(db);
+                    Log.i(TAG,   "RoomDatabase.Callback-->onCreate: ");
+                }
+
     };
     private static class PopulateDbAsync extends AsyncTask<Void, Void, Void>
     {
@@ -81,6 +95,19 @@ public abstract class WordRoomDatabase extends RoomDatabase
             //To keep the user’s data, we need to implement a migration.
             // Since the schema doesn’t change, we just need to provide an empty migration implementation
             // and tell Room to use it.
+            Log.i(TAG,   "MIGRATION_1_2-->migrate: ");
+            database.beginTransaction();
+            database.execSQL("Create table IF NOT EXISTS  users(_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,firstName TEXT,lastName TEXT)");
+            database.execSQL("Create table IF NOT EXISTS  weather(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,weatherIconId INTEGER NOT NULL," +
+                    "min REAL NOT NULL, max REAL NOT NULL,  humidity REAL NOT NULL,  pressure REAL NOT NULL,  wind REAL NOT NULL,  degrees REAL NOT NULL," +
+//                    "date datetime  default (datetime('now','localtime')))"); //this (using exiting sql fun) way you can depend on the earlier column  value and manipulate it and store it  other column
+                    "date INTEGER unique default current_timestamp);");
+            database.execSQL("CREATE UNIQUE INDEX index_weather_date ON weather (date);");
+//            database.execSQL("CREATE TABLE IF NOT EXISTS `answer` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `question_id` INTEGER NOT NULL, `answer` TEXT NOT NULL, FOREIGN KEY(`question_id`) REFERENCES `question`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+            database.setTransactionSuccessful();
+            database.endTransaction();
+
+
         }
     };
     static final Migration MIGRATION_2_3 = new Migration(2, 3) {

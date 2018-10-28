@@ -37,4 +37,6 @@ ext {
     appVer="1.0"
     appCode=1
     buildToolsVersion="28.0.3"
+    support_test_version = "1.0.0"
+    firebase_jobdispatcher_version = "0.8.5"
 }
